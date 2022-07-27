@@ -1,87 +1,60 @@
+
+
 #C:\\Users\john-\GCode\KarlsRib.txt
 #!/usr/bin/env python3
-import os
+preamble = " "
+import re
 index = True
 while index:
     gcode_path = input("enter full path to file; ")
+
     print(gcode_path)
     try:
-        reading_file = open(gcode_path,"r")
+        #reading_file = open(gcode_path,"r")
+        with open(gcode_path, 'r') as post_file:
+            gcode_file = post_file.read()
+
+            ind_pre = gcode_file.find("(Profile)")
+            ind_post = gcode_file.find("(begin postamble)")
+            ind_end = gcode_file.rindex("M2")
+            ind_end = ind_end + 2
+
+        # writing_file = open("preamble.txt", "w")
+
+        # Split the string into preamble , gcode and postamble
+            if len(gcode_file) > ind_end :
+                preamble = gcode_file[0: ind_pre:]
+                code = gcode_file[ind_pre : ind_post : ]
+                post = gcode_file[ind_post : ind_end :]
 
         index = False
     except FileNotFoundError:
         print("File not found")
-    #except
 
-writing_file = open("preamble.txt", "w")
+# Add G19
 
-next_line = reading_file.readline()
+index = preamble.find('M5')
+preamble = preamble[:index] + "G19 " + preamble[index:]
 
-#Sepeerate Postamble
+# Looking for M3 and speed using wildcard search
 
-profile_end = "(Profile)"
-while next_line.strip() != profile_end:
-    next_line = reading_file.readline()
+# initializing Substring
+sub_str = 'M3 S....'
+# Wildcard Substring search
+# Using re.finditer()
+temp = re.compile(sub_str)
+res = temp.search(preamble)
+try:
+# printing result
+    print("The substring match is : " + str(res.group(0)))
+    word = str(res.group(0))
 
-    writing_file.write(next_line)
-writing_file.close()
+    preamble = preamble.replace(word," ")
 
-# Seperate GCode
+    print(preamble)
+except AttributeError: # catch exceptions if speed not set
+    preamble = preamble.replace('M3', " ")
 
-profile_end = "(finish operation: Profile)"
-writing_file = open("gcode.txt", "w")
-while next_line.strip() != profile_end:
-    next_line = reading_file.readline()
-    writing_file.write(next_line)
-writing_file.close()
-
-# seperates Postamble
-
-writing_file = open("postamble.txt", "w")
-eof = True
-while eof:
-    next_line = reading_file.readline()
-    writing_file.write(next_line)
-
-    if not next_line:
-        eof = False
-writing_file.close()
-
-reading_file.close()
-
-#xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-
-#input file
-file_in = open("preamble.txt", "rt")
-#output file to write the result to
-file_out = open("temp.txt", "wt")
-#for each line in the input file
-for line in file_in:
-	#read replace the string and write to output file
-	file_out.write(line.replace('M5', 'M5 G19'))
-#close input and output files
-file_in.close()
-file_out.close()
-
-#input file
-file_in = open("temp.txt", "rt")
-#output file to write the result to
-file_out = open("preamble.txt", "wt")
-#for each line in the input file
-for line in file_in:
-	#read replace the string and write to output file
-	file_out.write(line.replace('M3 S2000', ''))
-#close input and output files
-file_in.close()
-file_out.close()
-
-#xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-
-
-
-reading_file = open("gcode.txt", "r")
-
-#reading_file = open("C:\\Users\\john-\\GCode\\KarlsRib.txt", "r")
 my_dict = {
     88: 89,
     89: 90,
@@ -89,64 +62,22 @@ my_dict = {
     73: 74,
     74: 75
 }
+code = code.translate(my_dict)
 
-preamble= ""
-#print(preamble)
-new_file_content = ""
-for line in reading_file:
-    stripped_line = line.strip()
-    #new_line = stripped_line.replace("X", "A")
-    new_line = stripped_line.translate(my_dict)
-    new_file_content += new_line +"\n"
-reading_file.close()
+#Reassemble file
 
+fin_file = preamble + code + post
 
-writing_file = open("gcode_mod.txt", "w")
-#writing_file = open("C:\\Users\\john-\\GCode\\KarlsRibFoam.txt", "w")
-writing_file.write(new_file_content)
-writing_file.close()
+print(fin_file)
 
-#XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+#Add fm to file name to create new file
+
 my_string = gcode_path
-index = my_string.find('.txt')
-gcode_file = my_string[:index] +"Fm"+ my_string[index:]
-#print(gcode_file)
+index = gcode_path.find('.txt')
+gcode_file = gcode_path[:index] +"Fm"+ gcode_path[index:]
 
-
-#file = input("enter file")
-#print(file)
-gcode_path = gcode_file
-#path = "C:\\Users\\john-\\GCode\\{}"
-
-
-writing_file = open(gcode_path,"w")
-
-#XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-# Reassemble file
-#writing_file = open("final.txt", "a")
-file = ["preamble.txt", "gcode_mod.txt","postamble.txt"]
-
-for index in file:
-
-    reading_file = open(index,"r")
-    eof = True
-    #print(index)
-    while eof:
-        next_line = reading_file.readline()
-        writing_file.write(next_line)
-     #   print(next_line)
-        if not next_line:
-      #     print("End Of File")
-           eof = False
-    reading_file.close()
-writing_file.close()
-
-print("File " + gcode_file +" created")
-
-# Clean up
-file = ["preamble.txt", "gcode_mod.txt","postamble.txt","gcode.txt", "temp.txt"]
-
-for index in file:
-    os.remove(index)
-
+#Save file
+with open(gcode_file, "w") as file:
+    file.write(fin_file)
+print("Operation Complete the new file is  " +  gcode_file)
 
