@@ -1,14 +1,15 @@
 
+if __name__ == '__main__':
+    import re
 
-#C:\\Users\john-\GCode\KarlsRib.txt
 #!/usr/bin/env python3
-preamble = " "
-import re
-index = True
-while index:
-    gcode_path = input("enter full path to file; ")
 
+file = True
+while file:
+
+    gcode_path = input("enter full path to file; ")
     print(gcode_path)
+
     try:
         #reading_file = open(gcode_path,"r")
         with open(gcode_path, 'r') as post_file:
@@ -27,14 +28,13 @@ while index:
                 code = gcode_file[ind_pre : ind_post : ]
                 post = gcode_file[ind_post : ind_end :]
 
-        index = False
+        file = False
     except FileNotFoundError:
         print("File not found")
 
 # Add G19
-
-index = preamble.find('M5')
-preamble = preamble[:index] + "G19 " + preamble[index:]
+counter = preamble.find('M5')
+preamble = preamble[:counter] + "G19 " + preamble[counter:]
 
 # Looking for M3 and speed using wildcard search
 
@@ -72,9 +72,10 @@ print(fin_file)
 
 #Add fm to file name to create new file
 
-my_string = gcode_path
-index = gcode_path.find('.txt')
-gcode_file = gcode_path[:index] +"Fm"+ gcode_path[index:]
+sub_str = "."
+file1, file2 = gcode_path.split( sub_str, 1 )
+print("this is file1 ", file1)
+gcode_file = file1 + "fm." + file2
 
 #Save file
 with open(gcode_file, "w") as file:
